@@ -37,7 +37,8 @@ def toggle_live(action: QCoreAction, checked: bool) -> None:
     if mmc.isSequenceRunning():
         mmc.stopSequenceAcquisition()
     else:
-        mmc.startContinuousSequenceAcquisition(0)
+        interval_ms = max(float(mmc.getExposure()), 1.0)
+        mmc.startContinuousSequenceAcquisition(interval_ms)
 
 
 def _init_snap_image(action: QCoreAction) -> None:

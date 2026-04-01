@@ -3,9 +3,17 @@ from __future__ import annotations
 from typing import cast
 
 from pymmcore_plus import CMMCorePlus, DeviceType
-from pymmcore_widgets import ShuttersWidget
+from pymmcore_widgets import DefaultCameraExposureWidget, ShuttersWidget
 
-from pymmcore_gui._qt.QtWidgets import QToolBar, QWidget, QWidgetAction
+from pymmcore_gui._qt.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QToolBar,
+    QWidget,
+    QWidgetAction,
+)
 
 
 class OCToolBar(QToolBar):
@@ -99,3 +107,84 @@ class ShuttersToolbar(QToolBar):
             if widget is not None:
                 widget.deleteLater()
             self.removeAction(action)
+
+
+class AutoFocusWidget(QWidget):
+    """Minimal autofocus/PFS control widget."""
+
+    def __init__(
+        self,
+        mmc: CMMCorePlus,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.mmc = mmc
+
+        self._label = QLabel("PFS")
+        self._toggle = QCheckBox("Live")
+        self._full_focus = QPushButton("Full Focus")
+        self._full_focus.setToolTip("Run a full autofocus cycle on the current AF device.")
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        layout.addWidget(self._label)
+        layout.addWidget(self._toggle)
+        layout.addWidget(self._full_focus)
+
+        self._toggle.toggled.connect(self._on_toggled)
+        self._full_focus.clicked.connect(self._on_full_focus)
+
+        self.mmc.events.systemConfigurationLoaded.connect(self._refresh)
+        self.mmc.events.propertyChanged.connect(self._on_property_changed)
+        self._refresh()
+
+    def _refresh(self) -> None:
+        af_dev = self.mmc.getAutoFocusDevice()
+        enabled = bool(af_dev)
+        self.setEnabled(enabled)
+        self._label.setText(af_dev or "PFS")
+        if enabled:
+            blocked = self._toggle.blockSignals(True)
+            try:
+                self._toggle.setChecked(bool(self.mmc.isContinuousFocusEnabled()))
+            finally:
+                self._toggle.blockSignals(blocked)
+
+    def _on_property_changed(self, device: str, prop: str, value: object) -> None:
+        af_dev = self.mmc.getAutoFocusDevice()
+        if device == "Core" and prop == "AutoFocus":
+            self._refresh()
+        elif af_dev and device == af_dev:
+            self._refresh()
+
+    def _on_toggled(self, enabled: bool) -> None:
+        self.mmc.enableContinuousFocus(enabled)
+
+    def _on_full_focus(self) -> None:
+        self.mmc.fullFocus()
+        self.mmc.waitForSystem()
+        self._refresh()
+
+
+class RuntimeDevicesToolbar(QToolBar):
+    """Toolbar with runtime controls for camera, shutters, and autofocus."""
+
+    def __init__(self, mmc: CMMCorePlus, parent: QWidget | None = None) -> None:
+        super().__init__("Runtime Devices", parent)
+        self.mmc = mmc
+        self.setObjectName("Runtime Devices")
+
+        self.addWidget(QLabel("Exposure"))
+        self.addWidget(DefaultCameraExposureWidget(parent=self, mmcore=mmc))
+        self.addSeparator()
+
+        self._shutters_toolbar = ShuttersToolbar(mmc, parent)
+        for action in self._shutters_toolbar.actions():
+            if widget_action := cast("QWidgetAction", action):
+                widget = widget_action.defaultWidget()
+                if widget is not None:
+                    self.addWidget(widget)
+
+        self.addSeparator()
+        self.addWidget(AutoFocusWidget(mmc, parent=self))

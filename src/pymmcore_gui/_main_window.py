@@ -33,7 +33,7 @@ from ._notification_manager import NotificationManager
 from ._settings import Settings
 from .actions import CoreAction, QCoreAction, WidgetAction, WidgetActionInfo
 from .actions._action_info import ActionInfo
-from .widgets._toolbars import OCToolBar
+from .widgets._toolbars import OCToolBar, RuntimeDevicesToolbar
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -80,6 +80,7 @@ class Toolbar(str, Enum):
     """Toolbar names."""
 
     CAMERA_ACTIONS = "Camera Actions"
+    RUNTIME_DEVICES = "Runtime Devices"
     OPTICAL_CONFIGS = "Optical Configs"
     WIDGETS = "Widgets"
     SHUTTERS = "Shutters"
@@ -125,6 +126,7 @@ class MicroManagerGUI(QMainWindow):
             CoreAction.SNAP,
             CoreAction.TOGGLE_LIVE,
         ],
+        Toolbar.RUNTIME_DEVICES: RuntimeDevicesToolbar,
         Toolbar.OPTICAL_CONFIGS: OCToolBar,
         # Toolbar.SHUTTERS: ShuttersToolbar,
         Toolbar.WIDGETS: [
