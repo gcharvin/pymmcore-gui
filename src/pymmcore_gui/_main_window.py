@@ -414,6 +414,8 @@ class MicroManagerGUI(QMainWindow):
         settings.flush()
 
     def _add_toolbar(self, name: str, tb_entry: ToolDictValue) -> None:
+        if name == Toolbar.RUNTIME_DEVICES:
+            self.addToolBarBreak()
         if callable(tb_entry):
             tb = tb_entry(self._mmc, self)
             self.addToolBar(tb)

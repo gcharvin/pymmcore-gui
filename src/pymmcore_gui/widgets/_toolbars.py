@@ -168,7 +168,7 @@ class AutoFocusWidget(QWidget):
 
 
 class RuntimeDevicesToolbar(QToolBar):
-    """Toolbar with runtime controls for camera, shutters, and autofocus."""
+    """Toolbar with runtime controls for camera and autofocus."""
 
     def __init__(self, mmc: CMMCorePlus, parent: QWidget | None = None) -> None:
         super().__init__("Runtime Devices", parent)
@@ -177,14 +177,5 @@ class RuntimeDevicesToolbar(QToolBar):
 
         self.addWidget(QLabel("Exposure"))
         self.addWidget(DefaultCameraExposureWidget(parent=self, mmcore=mmc))
-        self.addSeparator()
-
-        self._shutters_toolbar = ShuttersToolbar(mmc, parent)
-        for action in self._shutters_toolbar.actions():
-            if widget_action := cast("QWidgetAction", action):
-                widget = widget_action.defaultWidget()
-                if widget is not None:
-                    self.addWidget(widget)
-
         self.addSeparator()
         self.addWidget(AutoFocusWidget(mmc, parent=self))
