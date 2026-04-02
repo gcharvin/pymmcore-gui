@@ -12,6 +12,7 @@ logger = logging.getLogger("pymmcore_gui")
 SIDECAR_SUFFIX = ".pymmcore-gui.json"
 NIKON_PROFILE = "nikon_tieclipse"
 NIKON_SETTINGS = (
+    ("AnalogIO", "Volts"),
     ("DA Shutter", "DA Device"),
     ("TIXYDrive", "SpeedX"),
     ("TIXYDrive", "SpeedY"),
