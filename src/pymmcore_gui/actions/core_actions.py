@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pymmcore_gui._config_sidecar import save_nikon_sidecar
+
 from ._action_info import ActionInfo, ActionKey
 
 if TYPE_CHECKING:
@@ -101,6 +103,7 @@ def save_sys_config_dialog(action: QCoreAction, checked: bool) -> None:
     )
     if path:
         action.mmc.saveSystemConfiguration(path)
+        save_nikon_sidecar(action.mmc, path)
 
 
 # ########################## Action Info Instances #############################

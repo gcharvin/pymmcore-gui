@@ -14,7 +14,7 @@ from pymmcore_widgets import ConfigWizard
 from superqt import QIconifyIcon
 
 from pymmcore_gui._qt.QtAds import CDockManager, CDockWidget, SideBarLocation
-from pymmcore_gui._qt.QtCore import Qt
+from pymmcore_gui._qt.QtCore import QTimer, Qt
 from pymmcore_gui._qt.QtGui import QAction, QCloseEvent, QGuiApplication, QIcon
 from pymmcore_gui._qt.QtOpenGLWidgets import QOpenGLWidget
 from pymmcore_gui._qt.QtWidgets import (
@@ -28,6 +28,7 @@ from pymmcore_gui._qt.QtWidgets import (
     QWidget,
 )
 
+from ._config_sidecar import apply_nikon_sidecar
 from ._ndv_viewers import NDVViewersManager
 from ._notification_manager import NotificationManager
 from ._settings import Settings
@@ -409,6 +410,13 @@ class MicroManagerGUI(QMainWindow):
     def _on_system_config_loaded(self) -> None:
         settings = Settings.instance()
         if cfg := self._mmc.systemConfigurationFile():
+            def _apply_sidecar() -> None:
+                try:
+                    apply_nikon_sidecar(self._mmc, cfg)
+                except Exception:
+                    logger.exception("Failed to apply Nikon config sidecar for %s", cfg)
+
+            QTimer.singleShot(0, _apply_sidecar)
             settings.last_config = Path(cfg)
         else:
             settings.last_config = None
