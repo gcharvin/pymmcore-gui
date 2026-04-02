@@ -19,6 +19,7 @@ if os.name == "nt":
 from qtconsole.inprocess import QtInProcessKernelManager
 from traitlets import default
 
+from pymmcore_gui._qt.QtCore import Signal
 from pymmcore_gui._qt.QtWidgets import QApplication, QWidget
 
 try:
@@ -48,6 +49,8 @@ class _FakeCfg:
 class MMConsole(QtConsole):
     """A Qt widget for an IPython console, providing access to UI components."""
 
+    appendRequested = Signal(str)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
@@ -74,6 +77,7 @@ class MMConsole(QtConsole):
             self.shell.run_cell("from rich import pretty; pretty.install()")  # type: ignore [no-untyped-call]
             self.shell.run_cell("from rich import print")  # type: ignore [no-untyped-call]
 
+        self.appendRequested.connect(self._append_text)
         self._inject_core_vars()
 
     def _inject_core_vars(self) -> None:
@@ -117,6 +121,14 @@ class MMConsole(QtConsole):
 
     def push(self, variables: dict[str, Any]) -> None:
         self.shell.push(variables)  # type: ignore [no-untyped-call]
+
+    def log_text(self, text: str) -> None:
+        """Append text to the visible console."""
+        self.appendRequested.emit(text)
+
+    def _append_text(self, text: str) -> None:
+        escaped = repr(text)
+        self.shell.run_cell(f"print({escaped})")  # type: ignore [no-untyped-call]
 
     def get_user_variables(self) -> dict:
         """Return the variables pushed to the console."""

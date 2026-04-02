@@ -121,6 +121,8 @@ def create_mda_widget(parent: QWidget) -> pmmw.MDAWidget:
             self._last_event: MDAEvent | None = None
             self._is_paused = False
             self._was_canceled = False
+            self._exception_log_index = 0
+            self._last_console_message = ""
 
             self._status_label = QLabel("Idle", self)
             self._status_label.setObjectName("mdaStatusLabel")
@@ -229,6 +231,18 @@ def create_mda_widget(parent: QWidget) -> pmmw.MDAWidget:
                 self._format_status(step=step, event=event, next_seconds=next_seconds)
             )
 
+        def _log_console(self, message: str) -> None:
+            if not message or message == self._last_console_message:
+                return
+            self._last_console_message = message
+            if win := _get_mm_main_window(self):
+                try:
+                    console = win.get_widget(WidgetAction.CONSOLE, create=False)
+                except KeyError:
+                    return
+                if hasattr(console, "log_text"):
+                    console.log_text(message)
+
         def _on_sequence_started(
             self, sequence: MDASequence, meta: Mapping[str, object]
         ) -> None:
@@ -238,13 +252,19 @@ def create_mda_widget(parent: QWidget) -> pmmw.MDAWidget:
             self._last_event = None
             self._is_paused = False
             self._was_canceled = False
+            from pymmcore_gui import _app
+
+            self._exception_log_index = len(_app.EXCEPTION_LOG)
+            self._last_console_message = ""
             self._set_status(step="Preparing")
+            self._log_console("MDA started")
 
         def _on_event_started(self, event: MDAEvent) -> None:
             self._last_event = event
             action = getattr(event, "action", None)
             if isinstance(action, HardwareAutofocus):
                 self._set_status(step="Autofocus", event=event)
+                self._log_console(self._format_status(step="Autofocus", event=event))
             else:
                 self._set_status(step="Acquiring", event=event)
 
@@ -268,13 +288,22 @@ def create_mda_widget(parent: QWidget) -> pmmw.MDAWidget:
         def _on_sequence_canceled(self, sequence: MDASequence) -> None:
             self._was_canceled = True
             self._set_status(step="Canceled")
+            self._log_console("MDA canceled")
 
         def _on_sequence_finished(self, sequence: MDASequence) -> None:
             finish_reason = getattr(self._mmc.mda.status, "finish_reason", None)
             if finish_reason is not None and str(finish_reason) == "errored":
+                from pymmcore_gui import _app
+
                 step = "Error"
+                self._log_console("MDA error")
+                new_errors = _app.EXCEPTION_LOG[self._exception_log_index :]
+                if new_errors:
+                    exc_type, exc_value, _tb = new_errors[-1]
+                    self._log_console(f"{exc_type.__name__}: {exc_value}")
             else:
                 step = "Canceled" if self._was_canceled else "Finished"
+                self._log_console(f"MDA {step.lower()}")
             self._set_status(step=step)
 
     return MDAWidget(parent=parent, mmcore=_get_core(parent))
