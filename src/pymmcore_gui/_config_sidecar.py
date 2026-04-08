@@ -21,6 +21,7 @@ NIKON_SETTINGS = (
     ("Core", "ChannelGroup"),
 )
 NIKON_DEFAULTS: dict[str, dict[str, str]] = {"Core": {"TimeoutMs": "20000"}}
+NIKON_FORCED_VALUES: dict[str, dict[str, str]] = {"Core": {"AutoShutter": "1"}}
 
 
 def sidecar_path(cfg_path: str | Path) -> Path:
@@ -61,6 +62,8 @@ def save_nikon_sidecar(mmc: CMMCorePlus, cfg_path: str | Path) -> Path | None:
     for device, prop in NIKON_SETTINGS:
         if value := _get_property(mmc, device, prop):
             values.setdefault(device, {})[prop] = value
+    for device, props in NIKON_FORCED_VALUES.items():
+        values.setdefault(device, {}).update(props)
 
     if not values:
         return None
@@ -102,6 +105,8 @@ def apply_nikon_sidecar(mmc: CMMCorePlus, cfg_path: str | Path) -> bool:
                 merged_values.setdefault(device, {}).update(
                     {str(prop): str(value) for prop, value in props.items()}
                 )
+    for device, props in NIKON_FORCED_VALUES.items():
+        merged_values.setdefault(device, {}).update(props)
 
     applied = False
     for device, props in merged_values.items():
