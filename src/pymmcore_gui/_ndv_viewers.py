@@ -142,7 +142,7 @@ class NDVViewersManager(QObject):
         """Create or show the image preview widget, return True if created."""
         preview = None
         if self._current_image_preview is None:
-            preview = NDVPreview(mmcore=self._mmc)
+            preview = NDVPreview(mmcore=self._mmc, use_with_mda=True)
             if not isinstance((parent := self.parent()), QWidget):
                 parent = None  # pragma: no cover
 
@@ -167,14 +167,12 @@ class NDVViewersManager(QObject):
         return preview
 
     def _on_streaming_started(self) -> None:
-        if not self._is_mda_running:
-            if preview := self._create_or_show_img_preview():
-                preview._on_streaming_start()
+        if preview := self._create_or_show_img_preview():
+            preview._on_streaming_start()
 
     def _on_image_snapped(self) -> None:
-        if not self._is_mda_running:
-            if preview := self._create_or_show_img_preview():
-                preview.append(self._mmc.getImage())
+        if preview := self._create_or_show_img_preview():
+            preview.append(self._mmc.getImage())
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<{self.__class__.__name__} {hex(id(self))} ({len(self)} viewer)>"
