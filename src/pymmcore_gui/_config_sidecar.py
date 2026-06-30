@@ -14,10 +14,12 @@ NIKON_PROFILE = "nikon_tieclipse"
 NIKON_SETTINGS = (
     ("AnalogIO", "Volts"),
     ("DA Shutter", "DA Device"),
+    ("Core", "TimeoutMs"),
     ("TIXYDrive", "SpeedX"),
     ("TIXYDrive", "SpeedY"),
     ("Core", "ChannelGroup"),
 )
+NIKON_DEFAULTS: dict[str, dict[str, str]] = {"Core": {"TimeoutMs": "20000"}}
 
 
 def sidecar_path(cfg_path: str | Path) -> Path:
@@ -76,24 +78,31 @@ def apply_nikon_sidecar(mmc: CMMCorePlus, cfg_path: str | Path) -> bool:
     if not is_nikon_scope(mmc, cfg_path):
         return False
 
+    merged_values: dict[str, dict[str, str]] = {
+        dev: props.copy() for dev, props in NIKON_DEFAULTS.items()
+    }
+
     path = sidecar_path(cfg_path)
-    if not path.exists():
-        return False
+    if path.exists():
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            logger.exception("Failed to read config sidecar: %s", path)
+        else:
+            if payload.get("profile") == NIKON_PROFILE:
+                values = payload.get("values", {})
+                if isinstance(values, dict):
+                    for device, props in values.items():
+                        if isinstance(props, dict):
+                            merged_values.setdefault(device, {}).update(
+                                {
+                                    str(prop): str(value)
+                                    for prop, value in props.items()
+                                }
+                            )
 
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        logger.exception("Failed to read config sidecar: %s", path)
-        return False
-
-    if payload.get("profile") != NIKON_PROFILE:
-        return False
-
-    values = payload.get("values", {})
     applied = False
-    for device, props in values.items():
-        if not isinstance(props, dict):
-            continue
+    for device, props in merged_values.items():
         for prop, value in props.items():
             try:
                 mmc.setProperty(device, prop, str(value))

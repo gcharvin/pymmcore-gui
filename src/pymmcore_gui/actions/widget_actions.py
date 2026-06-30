@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, TypeVar, cast
 
 import pymmcore_widgets as pmmw
@@ -17,8 +18,6 @@ from pymmcore_gui._qt.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 from ._action_info import ActionKey, WidgetActionInfo, _ensure_isinstance
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from pymmcore_gui._main_window import MicroManagerGUI
     from pymmcore_gui._qt.QtCore import QObject
     from pymmcore_gui.widgets._exception_log import ExceptionLog
