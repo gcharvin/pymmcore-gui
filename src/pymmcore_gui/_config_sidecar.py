@@ -17,9 +17,19 @@ NIKON_SETTINGS = (
     ("Core", "TimeoutMs"),
     ("TIXYDrive", "SpeedX"),
     ("TIXYDrive", "SpeedY"),
+    ("TIXYDrive", "ToleranceX"),
+    ("TIXYDrive", "ToleranceY"),
     ("Core", "ChannelGroup"),
 )
-NIKON_DEFAULTS: dict[str, dict[str, str]] = {"Core": {"TimeoutMs": "20000"}}
+NIKON_DEFAULTS: dict[str, dict[str, str]] = {
+    "Core": {"TimeoutMs": "20000"},
+    "TIXYDrive": {
+        "SpeedX": "6",
+        "SpeedY": "6",
+        "ToleranceX": "5",
+        "ToleranceY": "5",
+    },
+}
 
 
 def sidecar_path(cfg_path: str | Path) -> Path:
