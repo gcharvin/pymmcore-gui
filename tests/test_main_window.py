@@ -148,17 +148,18 @@ def test_snap(gui: MicroManagerGUI, qtbot: QtBot) -> None:
     assert len(vm._preview_dock_widgets) == 2
 
 
-def test_snap_opens_preview_during_mda(gui: MicroManagerGUI, qtbot: QtBot) -> None:
-    """Test that manual snaps still open the live preview during MDA."""
+def test_snap_does_not_open_preview_during_mda(
+    gui: MicroManagerGUI, qtbot: QtBot
+) -> None:
+    """Manual snaps during MDA should not replace the MDA viewer with live preview."""
     vm = gui._viewers_manager
     vm._is_mda_running = True
     assert vm._current_image_preview is None
 
-    with qtbot.waitSignal(vm.previewViewerCreated):
+    with qtbot.waitSignal(gui.mmcore.events.imageSnapped):
         gui.mmcore.snapImage()
 
-    assert vm._current_image_preview is not None
-    assert vm._current_image_preview.widget().use_with_mda
+    assert vm._current_image_preview is None
 
 
 @pytest.mark.skipif(
@@ -191,17 +192,18 @@ def test_stream(gui: MicroManagerGUI, qtbot: QtBot) -> None:
     bool(sys.platform == "darwin"),
     reason="need to debug hanging test on macOS CI",
 )
-def test_stream_opens_preview_during_mda(gui: MicroManagerGUI, qtbot: QtBot) -> None:
-    """Test that live mode still opens the live preview during MDA waits."""
+def test_stream_does_not_open_preview_during_mda(
+    gui: MicroManagerGUI, qtbot: QtBot
+) -> None:
+    """Live mode during MDA should not replace the MDA viewer with live preview."""
     vm = gui._viewers_manager
     vm._is_mda_running = True
     assert vm._current_image_preview is None
 
-    with qtbot.waitSignal(vm.previewViewerCreated):
+    with qtbot.waitSignal(gui.mmcore.events.continuousSequenceAcquisitionStarted):
         gui.mmcore.startContinuousSequenceAcquisition()
 
-    assert vm._current_image_preview is not None
-    assert vm._current_image_preview.widget().use_with_mda
+    assert vm._current_image_preview is None
     gui.mmcore.stopSequenceAcquisition()
 
 

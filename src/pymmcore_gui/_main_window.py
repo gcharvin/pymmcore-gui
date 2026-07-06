@@ -571,13 +571,15 @@ class MicroManagerGUI(QMainWindow):
         q_viewer.setWindowTitle(f"MDA {sha}")
         q_viewer.setWindowFlags(Qt.WindowType.Dialog)
 
-        dw = CDockWidget(self.dock_manager, f"ndv-{sha}", self)
+        dw = CDockWidget(self.dock_manager, f"MDA {sha}", self)
         # small hack ... we need to retain a pointer to the viewer
         # otherwise the viewer will be garbage collected
         dw._viewer = ndv_viewer  # pyright: ignore reportAttributeAccessIssue]``
         dw.setWidget(q_viewer)
         dw.setFeature(dw.DockWidgetFeature.DockWidgetFloatable, False)
         self.dock_manager.addDockWidgetTabToArea(dw, self._central_dock_area)
+        dw.setAsCurrentTab()
+        dw.raise_()
 
     def _on_previewer_created(self, dock_widget: CDockWidget) -> None:
         self.dock_manager.addDockWidgetTabToArea(dock_widget, self._central_dock_area)

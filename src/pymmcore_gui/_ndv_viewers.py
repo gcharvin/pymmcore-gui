@@ -83,6 +83,8 @@ class NDVViewersManager(QObject):
     ) -> None:
         """Called when a new MDA sequence has been started."""
         self._is_mda_running = True
+        if self._current_image_preview is not None:
+            self._current_image_preview.toggleView(False)
         self._view = self._runner.get_view()
         self._active_mda_viewer = self._create_ndv_viewer(self._view, sequence, meta)
 
@@ -158,9 +160,9 @@ class NDVViewersManager(QObject):
             # parent will almost always be the MainWindow that dock_manager
             # (and in reality, will never be None)
             if dm := getattr(parent, "dock_manager", None):
-                dw = CDockWidget(dm, "Preview", parent)
+                dw = CDockWidget(dm, "Live Preview", parent)
             else:  # pragma: no cover
-                dw = CDockWidget("Preview", parent)
+                dw = CDockWidget("Live Preview", parent)
 
             self._current_image_preview = dw
             self._preview_dock_widgets.add(dw)
@@ -173,10 +175,14 @@ class NDVViewersManager(QObject):
         return preview
 
     def _on_streaming_started(self) -> None:
+        if self._is_mda_running:
+            return
         if preview := self._create_or_show_img_preview():
             preview._on_streaming_start()
 
     def _on_image_snapped(self) -> None:
+        if self._is_mda_running:
+            return
         if preview := self._create_or_show_img_preview():
             preview.append(self._mmc.getImage())
 
