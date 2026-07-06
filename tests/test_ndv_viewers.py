@@ -8,6 +8,7 @@ import pytest
 import useq
 from useq import MDASequence
 
+from pymmcore_gui._array_viewer import MMArrayViewer
 from pymmcore_gui._ndv_viewers import NDVViewersManager
 from pymmcore_gui._qt.QtWidgets import QApplication, QWidget
 
@@ -32,6 +33,7 @@ def test_viewers_manager(mmcore: CMMCorePlus, qtbot: QtBot) -> None:
         ),
     )
     assert len(manager) == 1
+    assert all(isinstance(viewer, MMArrayViewer) for viewer in manager.viewers())
 
     with qtbot.waitSignal(dummy.destroyed, timeout=1000):
         dummy.deleteLater()
